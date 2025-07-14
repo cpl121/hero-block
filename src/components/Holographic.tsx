@@ -13,7 +13,7 @@ const Holographic = () => {
 
   const materialParameters = useMemo(() => {
       return {
-        color: '#70c1ff'
+        color: '#009987'
       }
   }, [])
 
