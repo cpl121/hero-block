@@ -1,8 +1,8 @@
 {
-  "name": "shader-template",
+  "name": "hero-block",
   "version": "0.1.0",
   "private": true,
-  "description": "Minimal template to build custom WebGL shaders with Next.js 15, Three.js, and Turbopack.",
+  "description": "Hero for NextBlock.",
   "author": {
     "name": "cpl121",
     "email": "cesar.peonlam@gmail.com",
