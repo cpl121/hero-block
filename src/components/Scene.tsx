@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { CanvasLoader, Holographic, GuiProvider } from '@/components';
+import { CanvasLoader, GuiProvider, Title, Block } from '@/components';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { Suspense } from 'react';
@@ -32,7 +32,9 @@ const Scene = () => {
         />
 
         <Suspense fallback={<CanvasLoader />} name={'Loader'}>
-          <Holographic />
+          {/* <Holographic /> */}
+          <Title />
+          <Block />
         </Suspense>
       </Canvas>
     </GuiProvider>
