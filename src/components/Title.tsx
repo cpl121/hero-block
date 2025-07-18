@@ -45,10 +45,11 @@ useFrame(({ clock }) => {
 })
 
   return (
-    <Center top left>
+    <Center top>
       <Text3D
         font={"./fonts/helvetiker_regular.typeface.json"}
         ref={meshRef}
+        scale={2}
       >
         NextBlock
         <shaderMaterial

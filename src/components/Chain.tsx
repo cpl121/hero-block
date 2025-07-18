@@ -1,39 +1,39 @@
-// import { RigidBody, BallJoint } from '@react-three/rapier'
-// import { Box } from '@react-three/drei'
+'use client'
 
-// const Chain = ({ count = 6 }) => {
-//   const height = 0.3
+import { useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
+import { useRef } from 'react'
 
-//   return (
-//     <>
-//       {Array.from({ length: count }).map((_, i) => {
-//         const y = 4 - i * height
+type ChainProps = {
+  startRef: React.RefObject<THREE.Object3D>
+  endRef: React.RefObject<THREE.Object3D>
+  segments?: number
+  radius?: number
+  color?: string
+}
 
-//         return (
-//           <RigidBody
-//             key={i}
-//             type={i === 0 ? 'fixed' : 'dynamic'}
-//             position={[0, y, 0]}
-//             colliders="cuboid"
-//           >
-//             <Box args={[0.1, height, 0.1]} castShadow receiveShadow>
-//               <meshStandardMaterial color="#aaa" />
-//             </Box>
+const Chain = ({ startRef, endRef, segments = 12, radius = 0.05, color = 'gray' }: ChainProps) => {
+  const meshRef = useRef<THREE.Mesh>(null!)
 
-//             {/* Join con el anterior */}
-//             {i > 0 && (
-//               <BallJoint
-//                 bodyA={i - 1}
-//                 bodyB={i}
-//                 anchorA={[0, -height / 2, 0]}
-//                 anchorB={[0, height / 2, 0]}
-//               />
-//             )}
-//           </RigidBody>
-//         )
-//       })}
-//     </>
-//   )
-// }
+  useFrame(() => {
+    if (!startRef.current || !endRef.current || !meshRef.current) return
 
-// export default Chain
+    const start = startRef.current.getWorldPosition(new THREE.Vector3())
+    const end = endRef.current.getWorldPosition(new THREE.Vector3())
+    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5)
+
+    const curve = new THREE.CatmullRomCurve3([start, mid, end])
+    const geometry = new THREE.TubeGeometry(curve, segments, radius, 8, false)
+
+    meshRef.current.geometry.dispose()
+    meshRef.current.geometry = geometry
+  })
+
+  return (
+    <mesh ref={meshRef}>
+      <meshStandardMaterial color={color} />
+    </mesh>
+  )
+}
+
+export default Chain

@@ -1,8 +1,9 @@
 import { Canvas } from '@react-three/fiber';
-import { CanvasLoader, GuiProvider, Title, Block } from '@/components';
-import { OrbitControls } from '@react-three/drei';
+import { CanvasLoader, GuiProvider, Title, BlockChain } from '@/components';
+import { Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { Suspense } from 'react';
+import { Physics } from '@react-three/rapier';
 
 const Scene = () => {
   return (
@@ -33,8 +34,12 @@ const Scene = () => {
 
         <Suspense fallback={<CanvasLoader />} name={'Loader'}>
           {/* <Holographic /> */}
+          <Environment preset="city" />
           <Title />
-          <Block />
+          {/* <Block position={[0, 0, -5]} /> */}
+          <Physics gravity={[0, 0, 0]}>
+            <BlockChain />
+          </Physics>
         </Suspense>
       </Canvas>
     </GuiProvider>
