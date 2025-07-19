@@ -1,5 +1,4 @@
 'use client';
-// import { useEffect, useMemo, useRef } from 'react';
 import vert from '@/shaders/basic.vert';
 import frag from '@/shaders/basic.frag';
 import * as THREE from 'three';
@@ -17,28 +16,9 @@ const Title = () => {
     }
 }, [])
 
-
-// useEffect(() => {
-//   if (!gui || !shaderRef.current) return;
-
-//   gui.add(shaderRef.current, 'transparent');
-//   gui
-//   .addColor(materialParameters, 'color')
-//   .onChange(() =>
-//   {
-//     shaderRef.current?.uniforms.uColor.value.set(materialParameters.color)
-//   })
-
-//   return () => gui.destroy();
-// }, [gui, materialParameters]);
-
 useFrame(({ clock }) => {
   const elapsedTime = clock.elapsedTime
-  
-  // if (meshRef.current) {
-  //   meshRef.current.rotation.x = - elapsedTime * 0.1
-  //   meshRef.current.rotation.y = elapsedTime * 0.2
-  // }
+
   if (shaderRef.current) {
     shaderRef.current.uniforms.uTime.value = elapsedTime
   }

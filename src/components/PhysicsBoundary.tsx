@@ -1,6 +1,4 @@
 import { RigidBody } from '@react-three/rapier'
-// import { useEffect, useRef } from 'react'
-// import * as THREE from 'three';
 
 const PhysicsBoundary = ({ size }: { size: number }) => {
     const half = size / 2
