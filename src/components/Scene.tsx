@@ -1,8 +1,9 @@
 import { Canvas } from '@react-three/fiber';
-import { CanvasLoader, Holographic, GuiProvider } from '@/components';
-import { OrbitControls } from '@react-three/drei';
+import { CanvasLoader, GuiProvider, Title, BlockChain, PhysicsBoundary } from '@/components';
+import { Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { Suspense } from 'react';
+import { Physics } from '@react-three/rapier';
 
 const Scene = () => {
   return (
@@ -24,15 +25,22 @@ const Scene = () => {
         <fog attach="fog" args={['#101520', 6, 15]} />
         <OrbitControls
           enableDamping
-          enablePan={false}
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={Math.PI / 2.05}
-          minDistance={7}
-          maxDistance={14}
+          // enablePan={false}
+          // minPolarAngle={Math.PI / 4}
+          // maxPolarAngle={Math.PI / 2.05}
+          // minDistance={7}
+          // maxDistance={14}
         />
 
         <Suspense fallback={<CanvasLoader />} name={'Loader'}>
-          <Holographic />
+          {/* <Holographic /> */}
+          <Environment preset="city" />
+          <Title />
+          {/* <Block position={[0, 0, -5]} /> */}
+          <Physics gravity={[0, 0, 0]}>
+            <PhysicsBoundary size={20} />
+            <BlockChain />
+          </Physics>
         </Suspense>
       </Canvas>
     </GuiProvider>
