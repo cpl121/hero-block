@@ -20,9 +20,9 @@ const Scene = () => {
           shadowMapType: THREE.PCFSoftShadowMap,
         }}
       >
-        <color attach="background" args={['#0a0a0f']} />
-        <ambientLight intensity={3} color="#445566" />
-        <fog attach="fog" args={['#101520', 6, 15]} />
+        <color attach="background" args={['#0b1220']} />
+        <fog attach="fog" args={['#0b1220', 10, 24]} />
+        <ambientLight intensity={1} color="#445566" />
         <OrbitControls
           enableDamping
           // enablePan={false}
@@ -34,7 +34,7 @@ const Scene = () => {
 
         <Suspense fallback={<CanvasLoader />} name={'Loader'}>
           {/* <Holographic /> */}
-          <Environment preset="city" />
+          <Environment preset="studio"  />
           <Title />
           {/* <Block position={[0, 0, -5]} /> */}
           <Physics gravity={[0, 0, 0]}>
