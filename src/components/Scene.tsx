@@ -34,7 +34,7 @@ const Scene = () => {
 
         <Suspense fallback={<CanvasLoader />} name={'Loader'}>
           {/* <Holographic /> */}
-          <Environment preset="city" />
+          <Environment preset="studio" environmentIntensity={0.2} background={false} blur={0.6} />
           <Title />
           {/* <Block position={[0, 0, -5]} /> */}
           <Physics gravity={[0, 0, 0]}>
