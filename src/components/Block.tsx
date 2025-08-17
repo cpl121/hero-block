@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useRef, useState, useCallback } from 'react';
+import { forwardRef, useRef, useState, useCallback, useEffect } from 'react';
 import { RoundedBox } from '@react-three/drei';
 import { RapierRigidBody, RigidBody, RigidBodyProps } from '@react-three/rapier';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -49,7 +49,7 @@ const Block = forwardRef<RapierRigidBody, BlockProps>(({
     event.stopPropagation();
     
     if (!rigidBodyRef.current) return;
-
+  
     rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
     rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
 
@@ -75,17 +75,39 @@ const Block = forwardRef<RapierRigidBody, BlockProps>(({
   }, [gl.domElement.style, setupDragPlane, onDragStart]);
 
   const handlePointerUp = useCallback(() => {
-    if (!isDragging) return;
+    if (!isDragging || !rigidBodyRef.current) return;
 
     setIsDragging(false);
     gl.domElement.style.cursor = 'auto';
     onDragEnd?.();
   }, [isDragging, gl.domElement.style, onDragEnd]);
 
-  const handlePointerMove = useCallback((event: ThreeEvent<PointerEvent>) => {
-    if (!isDragging) return;
-    event.stopPropagation();
-  }, [isDragging]);
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      if (isDragging) {
+        handlePointerUp();
+      }
+    };
+
+    const handleGlobalPointerMove = (event: PointerEvent) => {
+      if (isDragging) {
+      
+        const rect = gl.domElement.getBoundingClientRect();
+        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      }
+    };
+
+    if (isDragging) {
+      document.addEventListener('pointerup', handleGlobalPointerUp);
+      document.addEventListener('pointermove', handleGlobalPointerMove);
+    }
+
+    return () => {
+      document.removeEventListener('pointerup', handleGlobalPointerUp);
+      document.removeEventListener('pointermove', handleGlobalPointerMove);
+    };
+  }, [isDragging, handlePointerUp, gl.domElement, pointer]);
 
   useFrame(() => {
     if (!isDragging || !rigidBodyRef.current || !dragPlaneRef.current) return;
@@ -104,8 +126,8 @@ const Block = forwardRef<RapierRigidBody, BlockProps>(({
           targetPosition.z - currentPos.z
         );
         
-        const forceMagnitude = 50;
-        const dampening = 0.8;
+        const forceMagnitude = 80;
+        const dampening = 0.3;
         
         const force = diff.multiplyScalar(forceMagnitude);
         
@@ -120,7 +142,7 @@ const Block = forwardRef<RapierRigidBody, BlockProps>(({
         }
         
         rigidBodyRef.current.applyImpulse(
-          { x: force.x * 0.016, y: force.y * 0.016, z: force.z * 0.016 }, 
+          { x: force.x * 0.016, y: force.y * 0.016, z: force.z * 0.016 },
           true
         );
       }
@@ -155,8 +177,6 @@ const Block = forwardRef<RapierRigidBody, BlockProps>(({
             args={[2, 2, 2]} 
             radius={0.2}
             onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            onPointerMove={handlePointerMove}
             onPointerEnter={() => {
               if (!isDragging) {
                 gl.domElement.style.cursor = 'grab';
