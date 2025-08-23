@@ -12,10 +12,10 @@ const Holographic = () => {
   const meshRef = useRef<THREE.Mesh | null>(null);
 
   const materialParameters = useMemo(() => {
-      return {
-        color: '#009987'
-      }
-  }, [])
+    return {
+      color: '#009987',
+    };
+  }, []);
 
   const shape = useMemo(() => {
     const s = new THREE.Shape();
@@ -37,32 +37,28 @@ const Holographic = () => {
     bevelSegments: 2,
   };
 
-
   useEffect(() => {
     if (!gui || !shaderRef.current) return;
 
     gui.add(shaderRef.current, 'transparent');
-    gui
-    .addColor(materialParameters, 'color')
-    .onChange(() =>
-    {
-      shaderRef.current?.uniforms.uColor.value.set(materialParameters.color)
-    })
+    gui.addColor(materialParameters, 'color').onChange(() => {
+      shaderRef.current?.uniforms.uColor.value.set(materialParameters.color);
+    });
 
     return () => gui.destroy();
   }, [gui, materialParameters]);
 
   useFrame(({ clock }) => {
-    const elapsedTime = clock.elapsedTime
-    
+    const elapsedTime = clock.elapsedTime;
+
     if (meshRef.current) {
-      meshRef.current.rotation.x = - elapsedTime * 0.1
-      meshRef.current.rotation.y = elapsedTime * 0.2
+      meshRef.current.rotation.x = -elapsedTime * 0.1;
+      meshRef.current.rotation.y = elapsedTime * 0.2;
     }
     if (shaderRef.current) {
-      shaderRef.current.uniforms.uTime.value = elapsedTime
+      shaderRef.current.uniforms.uTime.value = elapsedTime;
     }
-  })
+  });
 
   return (
     <mesh receiveShadow ref={meshRef} scale={0.3}>
@@ -77,8 +73,8 @@ const Holographic = () => {
         vertexShader={vert}
         uniforms={{
           uTime: new THREE.Uniform(0),
-          uColor: new THREE.Uniform(new THREE.Color(materialParameters.color))
-      }}
+          uColor: new THREE.Uniform(new THREE.Color(materialParameters.color)),
+        }}
       />
     </mesh>
   );

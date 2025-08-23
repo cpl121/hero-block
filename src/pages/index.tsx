@@ -42,7 +42,7 @@ export default function Home() {
   return (
     <div className="flex flex-col h-full w-full">
       <main className="overflow-hidden h-full w-full">
-      {/* <main className="h-full w-full">
+        {/* <main className="h-full w-full">
         <h1 ref={titleRef} className='text-white fixed left-2/4 top-2/5 -translate-x-1/2 -translate-y-1/2 text-[12vw]'>NextBlock</h1>
         <h1 ref={descriptionRef} className='text-white text-6xl'>
           Discover the future of decentralized technology — one week at a time — with the newsletter that connects ideas, insights, and vision across the blockchain landscape.

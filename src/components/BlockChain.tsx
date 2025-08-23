@@ -7,86 +7,143 @@ import * as THREE from 'three'
 import Chain from './Chain';
 import BlockJoint from './BlockJoint';
 
-const BlockChain = () => {
-  const count = 12
-  const spacing = 4
+const INIT_BLOCKS = 10;
 
-  const rigidRefs = useRef<RapierRigidBody[]>([])
-  const visualRefs = useRef<THREE.Object3D[]>([])
+interface BlockData {
+  id: string;
+  position: [number, number, number];
+}
+
+interface BlockChainProps {
+  onBlockCountChange?: (count: number) => void;
+  addTrigger?: number;
+  removeTrigger?: number;
+}
+
+const BlockChain = ({ onBlockCountChange, addTrigger, removeTrigger }: BlockChainProps) => {
+  const spacing = 2
+  const [blocks, setBlocks] = useState<BlockData[]>(() => {
+    return Array.from({ length: INIT_BLOCKS }, (_, i) => ({
+      id: `block-${i}`,
+      position: [i * spacing, 0, 0] as [number, number, number]
+    }));
+  });
+
+  const rigidRefs = useRef<{ [key: string]: RapierRigidBody }>({})
+  const visualRefs = useRef<{ [key: string]: THREE.Object3D }>({})
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const allRigid = rigidRefs.current.length === count && rigidRefs.current.every(r => r)
-    const allVisual = visualRefs.current.length === count && visualRefs.current.every(r => r)
+    onBlockCountChange?.(blocks.length);
+  }, [blocks.length, onBlockCountChange]);
 
-    if (allRigid && allVisual) {
+  useEffect(() => {
+    const allRigidReady = blocks.every(block => rigidRefs.current[block.id])
+    const allVisualReady = blocks.every(block => visualRefs.current[block.id])
+
+    if (allRigidReady && allVisualReady && blocks.length > 0) {
       setReady(true)
+    } else {
+      setReady(false)
     }
-  }, [rigidRefs.current.length, visualRefs.current.length])
+  }, [blocks.length, Object.keys(rigidRefs.current).length, Object.keys(visualRefs.current).length])
 
-  const positions = Array.from({ length: count }, (_, i) => [i * spacing, 0, 0] as [number, number, number])
-
-  const makeChainLighter = (draggedIndex: number, lighter: boolean) => {
-    if (!ready || draggedIndex < 0 || draggedIndex >= count) return;
-
-    const affectedRange = 4; 
+  const addBlock = () => {
+    const newIndex = blocks.length;
+    const newBlock: BlockData = {
+      id: `block-${Date.now()}`,
+      position: [newIndex * spacing, 0, 0]
+    };
     
-    for (let i = 0; i < count; i++) {
-      const body = rigidRefs.current[i];
-      if (!body) continue;
-      
-      const distance = Math.abs(i - draggedIndex);
-      if (distance <= affectedRange) {
-        
-        const effect = Math.max(0.1, 1 - (distance / affectedRange) * 0.8); 
-        
-        if (lighter) {
-          
-          body.setAdditionalMass(-effect * 0.7, true); 
-          body.setLinearDamping(0.1); 
-          body.setAngularDamping(0.1); 
-        } else {
-          
-          body.setAdditionalMass(0, true); 
-          body.setLinearDamping(0.5); 
-          body.setAngularDamping(0.5); 
-        }
-      }
+    setBlocks(prev => [...prev, newBlock]);
+  };
+
+  const removeBlock = () => {
+    if (blocks.length <= 1) return;
+    
+    const lastBlock = blocks[blocks.length - 1];
+    
+    delete rigidRefs.current[lastBlock.id];
+    delete visualRefs.current[lastBlock.id];
+    
+    setBlocks(prev => prev.slice(0, -1));
+    
+    if (draggedIndex === blocks.length - 1) {
+      setDraggedIndex(null);
     }
   };
 
-  const propagateChainForces = (draggedIndex: number) => {
-    if (!ready || draggedIndex < 0 || draggedIndex >= count) return;
+  useEffect(() => {
+    if (addTrigger && addTrigger > 0) {
+      addBlock();
+    }
+  }, [addTrigger]);
 
-    const draggedBody = rigidRefs.current[draggedIndex];
+  useEffect(() => {
+    if (removeTrigger && removeTrigger > 0) {
+      removeBlock();
+    }
+  }, [removeTrigger]);
+
+  const makeChainLighter = (draggedIndex: number, lighter: boolean) => {
+    if (!ready || draggedIndex < 0 || draggedIndex >= blocks.length) return;
+
+    const affectedRange = 4;
+    
+    blocks.forEach((block, i) => {
+      const body = rigidRefs.current[block.id];
+      if (!body) return;
+      
+      const distance = Math.abs(i - draggedIndex);
+      if (distance <= affectedRange) {
+        const effect = Math.max(0.1, 1 - (distance / affectedRange) * 0.8);
+        
+        if (lighter) {
+          body.setAdditionalMass(-effect * 0.7, true);
+          body.setLinearDamping(0.1);
+          body.setAngularDamping(0.1);
+        } else {
+          body.setAdditionalMass(0, true);
+          body.setLinearDamping(0.5);
+          body.setAngularDamping(0.5);
+        }
+      }
+    });
+  };
+
+  const propagateChainForces = (draggedIndex: number) => {
+    if (!ready || draggedIndex < 0 || draggedIndex >= blocks.length) return;
+
+    const draggedBlock = blocks[draggedIndex];
+    const draggedBody = rigidRefs.current[draggedBlock.id];
     if (!draggedBody) return;
 
-    const draggedVel = rigidRefs.current[draggedIndex]?.linvel();
-    const draggedPos = rigidRefs.current[draggedIndex]?.translation();
+    const draggedVel = draggedBody.linvel();
+    const draggedPos = draggedBody.translation();
     if (!draggedVel || !draggedPos) return;
-    
-    const maxPropagationDistance = 5; 
-    const baseForceMagnitude = 35; 
+
+    const maxPropagationDistance = 5;
+    const baseForceMagnitude = 35;
 
     for (let distance = 1; distance <= maxPropagationDistance; distance++) {
-      const forceMultiplier = Math.pow(0.7, distance); 
+      const forceMultiplier = Math.pow(0.7, distance);
 
       [draggedIndex - distance, draggedIndex + distance].forEach(targetIndex => {
-        if (targetIndex >= 0 && targetIndex < count) {
-          const targetBody = rigidRefs.current[targetIndex];
+        if (targetIndex >= 0 && targetIndex < blocks.length) {
+          const targetBlock = blocks[targetIndex];
+          const targetBody = rigidRefs.current[targetBlock.id];
           if (!targetBody) return;
 
           const targetPos = targetBody.translation();
           if (!targetPos) return;
 
-          
           const velocityFactor = Math.min(1, Math.sqrt(
             draggedVel.x * draggedVel.x + 
             draggedVel.y * draggedVel.y + 
             draggedVel.z * draggedVel.z
-          ) / 5); 
+          ) / 5);
 
           const force = {
             x: draggedVel.x * baseForceMagnitude * forceMultiplier * velocityFactor * 0.016,
@@ -95,7 +152,7 @@ const BlockChain = () => {
           };
           
           targetBody.applyImpulse(force, true);
-             
+          
           const directionToTarget = {
             x: draggedPos.x - targetPos.x,
             y: draggedPos.y - targetPos.y,
@@ -129,16 +186,16 @@ const BlockChain = () => {
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
-    makeChainLighter(index, true); 
+    makeChainLighter(index, true);
   };
 
   const handleDragEnd = () => {
     if (draggedIndex !== null) {
-      makeChainLighter(draggedIndex, false); 
+      makeChainLighter(draggedIndex, false);
     }
     setDraggedIndex(null);
   };
-  
+
   useEffect(() => {
     if (draggedIndex !== null) {
       const interval = setInterval(() => {
@@ -151,35 +208,53 @@ const BlockChain = () => {
 
   return (
     <>
-      {positions.map((pos, i) => (
+      {blocks.map((block, i) => (
         <Block
-          key={i}
-          ref={(ref) => { if (ref) rigidRefs.current[i] = ref }}
-          visualRef={(ref) => { if (ref) visualRefs.current[i] = ref }}
-          position={pos}
+          key={block.id}
+          ref={(ref) => { 
+            if (ref) {
+              rigidRefs.current[block.id] = ref;
+            } else {
+              delete rigidRefs.current[block.id];
+            }
+          }}
+          visualRef={(ref) => { 
+            if (ref) {
+              visualRefs.current[block.id] = ref;
+            } else {
+              delete visualRefs.current[block.id];
+            }
+          }}
+          position={block.position}
           type={'dynamic'}
           onDragStart={() => handleDragStart(i)}
           onDragEnd={handleDragEnd}
         />
       ))}
 
-      {ready && positions.slice(1).map((_, i) => (
-        <BlockJoint
-          key={`joint-${i}`}
-          a={{ current: rigidRefs.current[i] }}
-          b={{ current: rigidRefs.current[i + 1] }}
-        />
-      ))}
+      {ready && blocks.slice(0, -1).map((block, i) => {
+        const nextBlock = blocks[i + 1];
+        return (
+          <BlockJoint
+            key={`joint-${block.id}-${nextBlock.id}`}
+            a={{ current: rigidRefs.current[block.id] }}
+            b={{ current: rigidRefs.current[nextBlock.id] }}
+          />
+        );
+      })}
 
-      {ready && positions.slice(1).map((_, i) => (
-        <Chain
-          key={`rope-${i}`}
-          startRef={{ current: visualRefs.current[i] }}
-          endRef={{ current: visualRefs.current[i + 1] }}
-          radius={0.1}
-          color="white"
-        />
-      ))}
+      {ready && blocks.slice(0, -1).map((block, i) => {
+        const nextBlock = blocks[i + 1];
+        return (
+          <Chain
+            key={`chain-${block.id}-${nextBlock.id}`}
+            startRef={{ current: visualRefs.current[block.id] }}
+            endRef={{ current: visualRefs.current[nextBlock.id] }}
+            radius={0.1}
+            color="white"
+          />
+        );
+      })}
     </>
   )
 }
